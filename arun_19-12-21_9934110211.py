@@ -3,7 +3,7 @@
 
 from flask import Flask
 from flask import Flask, redirect, url_for, render_template, request, flash
-from sqlalchemy.orm.properties import ColumnProperty
+# from sqlalchemy.orm.properties import ColumnProperty
 
 app = Flask(__name__)
 
@@ -38,18 +38,18 @@ import redis
 # q = Queue(connection=rd_conn)
 # print(q)
 # print(q)
-r = redis.Redis(host='49.206.19.247',
-port=9736,
-db=0)
+# r = redis.Redis(host='49.206.19.247',
+# port=9736,
+# db=0)
 # # print(r)
-print(r.mset({"Croatia": "Zagreb", "Bahamas": "Nassau"}))
-print(r.get("Bahamas").decode("utf-8"))
+# print(r.mset({"Croatia": "Zagreb", "Bahamas": "Nassau"}))
+# print(r.get("Bahamas").decode("utf-8"))
 
 
 # print(q.enqueue('a'))
 
 
-# r = redis.StrictRedis(host='49.206.19.247', port=9736, db=0)
+r = redis.StrictRedis(host='49.206.19.247', port=9736, db=0)
 # print(r)
 # r.set('foo', 'bar')
 
@@ -59,6 +59,21 @@ print(r.get("Bahamas").decode("utf-8"))
 # r.hmset('user', {'username': 'foo1', 'birth_year': 1977})
 # print(r.hgetall('user'))
 
+
+
+
+
+def addToCache(k):
+    r.hset(k, 14400, 1)
+
+
+def formatKey(_to,_from):
+  return "STOP_" + str(min(_to,_from))+"_"+str(max(_to,_from))
+
+
+addToCache(formatKey(10,29))
+
+r.hget(formatKey(10,29),1)
 @app.route("/inbound/sms/",methods=['POST','GET'])
 def inbound():
 
@@ -101,7 +116,32 @@ def inbound():
                 # STOP or STOP\n or STOP\r or STOP\r\n
                 # print(row[2])
                 if(data['text']=='STOP' or data['text']=='STOP\n' or data['text']=='STOP\r' or data['text']=='STOP\r\n'):
-                    print('stored in cache as a unique entry')
+                    # print('stored in cache as a unique entry')
+
+                    # setdata = {"from": data['from'], "to": data['to']}
+                    # print(setdata)
+                    
+
+                    # r.mset(setdata)
+                    # print(r.get("from").decode("utf-8"))
+                    # print(r.get("to"))
+
+                    # k = formatKey(data['to'],data['from'])
+                    # # 'STOP_'+str(data['to'])+'_'+str(data['from'])
+                    # print(k)
+                    
+                    # addToCache(k)
+                    # print(r.hgetall(k))
+
+                    
+
+                    r.hmset('user', {'from': data['from'], 'to': data['to']})
+
+                    print(
+                    r.hget('user', 'from').decode("utf-8")
+                    )
+
+
 
 
                 return '{"message": "inbound sms ok", "error": ""}'
@@ -142,6 +182,13 @@ def outbound():
         print(len(data['from']))
         print(data['to'])
         print(data['text'])
+        print(r.hgetall('user'))
+
+
+
+
+
+
         if data['from']=='':
             return '{"message": "", "error": "from is missing”"}'
         elif data['to']=='':
@@ -155,8 +202,48 @@ def outbound():
         elif len(data['text'])>120 or len(data['text'])<1:
             return '{"message": "", "error": "text is invalid"}'
 
+        else:
+            parameter_name_check = True
 
-    return '{"message": "inbound sms ok", "error": ""}'
+        if(parameter_name_check==True):
+            print(data['from'],r.hget('user', 'from').decode("utf-8"))
+            print(data['from'], r.hget('user', 'to').decode("utf-8"))
+
+       
+
+
+
+         
+
+            if(data['from']== r.hget('user', 'from').decode("utf-8") and data['to']== r.hget('user', 'to').decode("utf-8")):
+                print('here')
+
+                return '{"message": "", "error": "sms from '+ data["from"] +' to '+data["to"]+' blocked by STOP request"}'
+
+            else:
+
+                cur.execute("SELECT * FROM phone_number WHERE number=%(number)s", {'number': data['from'] } )
+                row = cur.fetchone()
+
+                print(row)
+
+
+                if row == None:
+                
+                    return '{"message”: "", "error": "from parameter not found"}'
+            
+
+
+        # print(
+        #     r.hget('user', 'from').decode("utf-8")
+        #     )
+
+            # if 
+
+            # {“message”: “”, “error”: “sms from <from> to <to> blocked by STOP request”}
+
+
+    return '{"message": "outbound sms ok", "error": ""}'
 
     
 
