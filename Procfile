@@ -1,1 +1,1 @@
-web: python arun1912219934110211.py
+web: gunicorn arun1912219934110211:app
