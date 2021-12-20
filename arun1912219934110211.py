@@ -59,19 +59,57 @@ r = redis.StrictRedis(host='49.206.19.247', port=9736, db=0)
 # r.hmset('user', {'username': 'foo1', 'birth_year': 1977})
 # print(r.hgetall('user'))
 
+r.sadd('a',1)
+# print(r.smembers('a'))
+
+# r.srem('a',1)
+# print(type(r.smembers('a')))
+s = r.smembers('a')
+# print(type(s))
+# print(len(s))
+if len(s) == 0:
+    print("Set is empty")
+else:
+    print("Set is not empty")
+
+
+    for x in range(50):
+
+        new_s= r.scard('a')+1
+        print(new_s)
+        print(r.srem('a',r.scard('a')))
+        print(new_s)
+        print(r.sadd('a',new_s))
+
+    if(r.scard('a')==50):
+        # return '{"message": "", "error": "limit reached for from <from>”"}'
+        print('limit reached for from <from>')
+
+
+
+    # print(r.smembers('a'))
 
 
 
 
-def addToCache(k):
-    r.hset(k, 14400, 1)
+
+
+
+
+
+
+def addToCache(k,t):
+    r.hset(k)
+
+    r.expire(k, t)
+
 
 
 def formatKey(_to,_from):
   return "STOP_" + str(min(_to,_from))+"_"+str(max(_to,_from))
 
 
-addToCache(formatKey(10,29))
+
 
 r.hget(formatKey(10,29),1)
 @app.route("/inbound/sms/",methods=['POST','GET'])
@@ -126,7 +164,7 @@ def inbound():
                     # print(r.get("from").decode("utf-8"))
                     # print(r.get("to"))
 
-                    # k = formatKey(data['to'],data['from'])
+                    k = formatKey(data['to'],data['from'])
                     # # 'STOP_'+str(data['to'])+'_'+str(data['from'])
                     # print(k)
                     
@@ -134,17 +172,29 @@ def inbound():
                     # print(r.hgetall(k))
 
                     
-
-                    r.hmset('user', {'from': data['from'], 'to': data['to']})
-
-                    print(
-                    r.hget('user', 'from').decode("utf-8")
-                    )
+                    exist = r.hget(k, 'from')
+                    if exist==None:
 
 
+                        r.hmset(k, {'from': data['from'], 'to': data['to']})
+                        r.expire(k,10)
+
+                    # for x in range(200):
+                    #     print(r.hget(k, 'from').decode("utf-8"))
+
+                    # print(
+                    # r.hget('user', 'from').decode("utf-8")
+                    # )
+                    
 
 
-                return '{"message": "inbound sms ok", "error": ""}'
+
+
+                    return '{"message": "inbound sms ok", "error": ""}'
+
+                else:
+                    return '{"message”: "", "error": "unknown failure"}'
+
 
  
 
@@ -179,10 +229,10 @@ def outbound():
         
         data = request.get_json(force=True)
         print(data)
-        print(len(data['from']))
-        print(data['to'])
-        print(data['text'])
-        print(r.hgetall('user'))
+        # print(len(data['from']))
+        # print(data['to'])
+        # print(data['text'])
+        # print(r.hgetall('user'))
 
 
 
@@ -206,16 +256,15 @@ def outbound():
             parameter_name_check = True
 
         if(parameter_name_check==True):
-            print(data['from'],r.hget('user', 'from').decode("utf-8"))
-            print(data['from'], r.hget('user', 'to').decode("utf-8"))
+            # print(data['from'],r.hget('user', 'from').decode("utf-8"))
+            # print(data['from'], r.hget('user', 'to').decode("utf-8"))
+            k = formatKey(data['to'],data['from'])
+            exist = r.hget(k, 'from')
+            # print( r.hget(k, 'from'), r.hget(k, 'to'))
 
-       
-
-
-
-         
-
-            if(data['from']== r.hget('user', 'from').decode("utf-8") and data['to']== r.hget('user', 'to').decode("utf-8")):
+            # return str(exist)
+            if exist!=None:
+            # if(data['from']== r.hget('user', 'from').decode("utf-8") and data['to']== r.hget('user', 'to').decode("utf-8")):
                 print('here')
 
                 return '{"message": "", "error": "sms from '+ data["from"] +' to '+data["to"]+' blocked by STOP request"}'
