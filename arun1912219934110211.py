@@ -59,31 +59,31 @@ r = redis.StrictRedis(host='49.206.19.247', port=9736, db=0)
 # r.hmset('user', {'username': 'foo1', 'birth_year': 1977})
 # print(r.hgetall('user'))
 
-r.sadd('a',1)
-# print(r.smembers('a'))
+# r.sadd('a',1)
+# # print(r.smembers('a'))
 
-# r.srem('a',1)
-# print(type(r.smembers('a')))
-s = r.smembers('a')
-# print(type(s))
-# print(len(s))
-if len(s) == 0:
-    print("Set is empty")
-else:
-    print("Set is not empty")
+# # r.srem('a',1)
+# # print(type(r.smembers('a')))
+# s = r.smembers('a')
+# # print(type(s))
+# # print(len(s))
+# if len(s) == 0:
+#     print("Set is empty")
+# else:
+#     print("Set is not empty")
 
 
-    for x in range(50):
+#     for x in range(50):
 
-        new_s= r.scard('a')+1
-        print(new_s)
-        print(r.srem('a',r.scard('a')))
-        print(new_s)
-        print(r.sadd('a',new_s))
+#         new_s= r.scard('a')+1
+#         print(new_s)
+#         print(r.srem('a',r.scard('a')))
+#         print(new_s)
+#         print(r.sadd('a',new_s))
 
-    if(r.scard('a')==50):
-        # return '{"message": "", "error": "limit reached for from <from>”"}'
-        print('limit reached for from <from>')
+#     if(r.scard('a')==50):
+#         # return '{"message": "", "error": "limit reached for from <from>”"}'
+#         print('limit reached for from <from>')
 
 
 
@@ -111,7 +111,7 @@ def formatKey(_to,_from):
 
 
 
-r.hget(formatKey(10,29),1)
+# r.hget(formatKey(10,29),1)
 @app.route("/inbound/sms/",methods=['POST','GET'])
 def inbound():
 
