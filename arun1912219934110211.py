@@ -177,7 +177,7 @@ def inbound():
 
 
                         r.hmset(k, {'from': data['from'], 'to': data['to']})
-                        r.expire(k,10)
+                        r.expire(k,14400)
 
                     # for x in range(200):
                     #     print(r.hget(k, 'from').decode("utf-8"))
