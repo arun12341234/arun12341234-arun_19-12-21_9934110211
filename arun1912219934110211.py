@@ -1,6 +1,7 @@
 
 
 
+from datetime import date
 from flask import Flask
 from flask import Flask, redirect, url_for, render_template, request, flash
 # from sqlalchemy.orm.properties import ColumnProperty
@@ -89,11 +90,16 @@ r = redis.StrictRedis(host='49.206.19.247', port=9736, db=0)
 
     # print(r.smembers('a'))
 
+# import datetime
+
+
+# pint(new Date)
+# r.expire(name, time)
 
 
 
 
-
+# reset counter
 
 
 
@@ -108,7 +114,8 @@ def addToCache(k,t):
 def formatKey(_to,_from):
   return "STOP_" + str(min(_to,_from))+"_"+str(max(_to,_from))
 
-
+def formatapiKey(_to,_from):
+  return "API_" + str(_from)+"_"+str(_to)
 
 
 # r.hget(formatKey(10,29),1)
@@ -228,7 +235,7 @@ def outbound():
         # print(type(request.data))
         
         data = request.get_json(force=True)
-        print(data)
+        # print(data)
         # print(len(data['from']))
         # print(data['to'])
         # print(data['text'])
@@ -265,21 +272,86 @@ def outbound():
             # return str(exist)
             if exist!=None:
             # if(data['from']== r.hget('user', 'from').decode("utf-8") and data['to']== r.hget('user', 'to').decode("utf-8")):
-                print('here')
+                # print('here')
 
                 return '{"message": "", "error": "sms from '+ data["from"] +' to '+data["to"]+' blocked by STOP request"}'
 
-            else:
-
-                cur.execute("SELECT * FROM phone_number WHERE number=%(number)s", {'number': data['from'] } )
-                row = cur.fetchone()
-
-                print(row)
-
-
-                if row == None:
                 
-                    return '{"message”: "", "error": "from parameter not found"}'
+
+            else:
+                k_api = formatapiKey(data['to'],data['from'])
+
+                s = r.smembers(k_api)
+                # r.expire(k_api,0)
+                # print(r.smembers(k_api))
+
+
+                if len(s) == 0:
+                    print(s)
+                    # r.sadd(k_api,1)
+                    r.hset(k_api, 1, 1)
+                    r.expire(k_api,86400)
+
+                else:
+                    # print(s)
+                    new_s= r.scard(k_api)+1
+                    print(new_s,'new_s')
+                    # r.srem(k_api,r.scard(k_api))
+                    # print(r.scard(k_api),'scard')
+
+                    # print(
+                    # # r.sadd(k_api,100)
+                    # r.sadd(k_api, 1, 2, 3)
+                    #     )
+                    # # print(new_s,'new_s1')
+                    # print(r.scard(k_api),'scard2')
+                    r.sadd(k_api,new_s)
+                    # print(r.scard(k_api))
+                    # r.srem(k_api,r.scard(k_api))
+                    # print(r.scard(k_api),'scard2')
+                    # print(r.scard(k_api))
+                    # print(r.smembers(k_api))
+                    # r.hset(k_api, new_s, 1)
+                    # print(r.hkeys(k_api))
+                    # r.sadd(k_api, new_s)
+
+                    r.sdiff(k_api,new_s)#this will retive with new set as well as old together
+                    print(r.smembers(k_api))
+                    print(
+                        len(r.smembers(k_api))
+                        )
+                    # print(r.s)
+                    if len(r.smembers(k_api))>50:
+                        print("error")
+                        return '{"message": "", "error": "limit reached for from '+str(data["from"])+'"}'
+                        
+                    
+                    # else:
+                        
+
+
+
+      
+
+
+                    # if(r.scard(k_api)>=50):
+                        
+                        
+                    # else:
+
+                # api_exist = r.hget(k_api, 'from')
+                # if api_exist==None:
+                #     r.hmset(k, {'from': data['from'], 'to': data['to']})
+
+                        cur.execute("SELECT * FROM phone_number WHERE number=%(number)s", {'number': data['from'] } )
+                        row = cur.fetchone()
+
+                        print(row,'row')
+
+
+                        if row == None:
+                        
+                            return '{"message”: "", "error": "from parameter not found"}'
             
 
 
